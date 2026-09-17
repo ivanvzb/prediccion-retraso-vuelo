@@ -10,7 +10,6 @@ from flask import Flask, jsonify, request, send_from_directory
 load_dotenv()
 
 API_KEY = os.environ.get("AVIATIONSTACK_API_KEY")
-PORT = int(os.environ.get("PORT", 3000))
 BASE_URL = "http://api.aviationstack.com/v1/flights"
 
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -156,4 +155,5 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+    port = int(os.environ.get("PORT") or 3000)
+    app.run(host="0.0.0.0", port=port, debug=True)
