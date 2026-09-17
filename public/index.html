@@ -1,23 +1,30 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Predicción de retraso de vuelo</title>
+<title>You're Late Again</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="card">
-    <h1>¿Cuánto se retrasará mi vuelo?</h1>
-    <p class="subtitle">Escribe el número de vuelo (ej. KL1508, BA5817) y buscamos el avión concreto que lo va a operar y su vuelo de llegada anterior.</p>
+  <div class="page">
+    <div class="brand">
+      <span class="brand-emoji">🛫</span>
+      <p class="brand-name">You're Late Again</p>
+    </div>
 
-    <form id="search-form">
-      <input id="flight-input" type="text" placeholder="Número de vuelo" autocomplete="off" required />
-      <button type="submit">Consultar</button>
-    </form>
+    <main class="card">
+      <h1>How late will your flight be?</h1>
+      <p class="subtitle">Enter a flight number (e.g. KL1508, BA5817) and we'll find the exact aircraft operating it and its previous inbound flight.</p>
 
-    <div id="result" class="result hidden"></div>
-  </main>
+      <form id="search-form">
+        <input id="flight-input" type="text" placeholder="Flight number" autocomplete="off" required />
+        <button type="submit">Check</button>
+      </form>
+
+      <div id="result" class="result hidden"></div>
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>

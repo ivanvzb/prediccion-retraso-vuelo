@@ -41,27 +41,27 @@ def predict():
     flight_number = (request.args.get("flight") or "").strip().upper()
 
     if not flight_number:
-        return jsonify({"error": "Falta el número de vuelo."}), 400
+        return jsonify({"error": "Please enter a flight number."}), 400
     if not API_KEY:
-        return jsonify({"error": "Falta configurar AVIATIONSTACK_API_KEY en el archivo .env del servidor."}), 500
+        return jsonify({"error": "AVIATIONSTACK_API_KEY is not configured on the server."}), 500
 
     try:
         target_data = call_aviationstack({"flight_iata": flight_number, "limit": "20"})
     except Exception:
-        return jsonify({"error": "No se pudo contactar con la API de vuelos."}), 502
+        return jsonify({"error": "Could not reach the flight data API."}), 502
 
     if target_data.get("error"):
-        return jsonify({"error": target_data["error"].get("message", "Error consultando la API de vuelos.")}), 502
+        return jsonify({"error": target_data["error"].get("message", "Error querying the flight data API.")}), 502
 
     candidates = target_data.get("data") or []
     if not candidates:
         return jsonify({
             "flightNumber": flight_number,
             "found": False,
-            "message": "No se encontró este vuelo. Comprueba el código IATA (ej. KL1508, IB3170).",
+            "message": "Flight not found. Check the IATA code (e.g. KL1508, BA5817).",
         })
 
-    # Puede haber varias entradas por codeshare; nos quedamos con la que coincide exactamente.
+    # There can be several codeshare entries; keep the one that matches exactly.
     primary = next(
         (f for f in candidates if ((f.get("flight") or {}).get("iata") or "").upper() == flight_number),
         candidates[0],
@@ -89,16 +89,16 @@ def predict():
     }
 
     if not icao24:
-        result["message"] = "Todavía no se ha asignado avión a este vuelo. Prueba de nuevo más cerca de la salida."
+        result["message"] = "No aircraft has been assigned to this flight yet. Try again closer to departure."
         result["predictedDelayMinutes"] = result["currentDepartureDelay"]
-        result["source"] = "oficial" if result["currentDepartureDelay"] is not None else "sin_datos"
+        result["source"] = "official" if result["currentDepartureDelay"] is not None else "no_data"
         return jsonify(result)
 
-    # Buscamos, entre los vuelos que llegaron a este aeropuerto el mismo día con la misma aerolínea,
-    # el que trae el MISMO avión (mismo icao24) justo antes de la salida de nuestro vuelo.
+    # Among the flights landing at this airport the same day with the same airline,
+    # find the one bringing in the SAME aircraft (same icao24) right before our flight departs.
     try:
-        # Nota: el plan gratuito de aviationstack devuelve 403 si se combina con "flight_date",
-        # así que nos apoyamos solo en la comparación de horas para quedarnos con el vuelo anterior.
+        # Note: aviationstack's free plan returns 403 when combined with "flight_date",
+        # so we rely only on comparing timestamps to pick the previous leg.
         inbound_data = call_aviationstack({
             "arr_icao": dep.get("icao") or "",
             "airline_iata": airline.get("iata") or "",
@@ -142,14 +142,14 @@ def predict():
 
         if result["currentDepartureDelay"] is not None:
             result["predictedDelayMinutes"] = result["currentDepartureDelay"]
-            result["source"] = "oficial"
+            result["source"] = "official"
         else:
             result["predictedDelayMinutes"] = inbound_delay
-            result["source"] = "avion_entrante"
+            result["source"] = "inbound_aircraft"
     else:
         result["predictedDelayMinutes"] = result["currentDepartureDelay"]
-        result["source"] = "oficial" if result["currentDepartureDelay"] is not None else "sin_datos"
-        result["message"] = "No pudimos identificar el vuelo de llegada anterior de este avión (puede llegar de otra aerolínea o aún no estar programado)."
+        result["source"] = "official" if result["currentDepartureDelay"] is not None else "no_data"
+        result["message"] = "We couldn't identify this aircraft's previous inbound flight (it may arrive with a different airline or not be scheduled yet)."
 
     return jsonify(result)
 

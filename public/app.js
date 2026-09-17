@@ -13,13 +13,13 @@ function formatTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 const SOURCE_LABELS = {
-  oficial: 'estimación oficial de la aerolínea',
-  avion_entrante: 'según el retraso del avión que llega antes',
-  sin_datos: 'sin datos suficientes',
+  official: "the airline's official estimate",
+  inbound_aircraft: "based on the delay of the inbound aircraft",
+  no_data: 'not enough data',
 };
 
 function render(data) {
@@ -37,7 +37,7 @@ function render(data) {
 
   const predicted = data.predictedDelayMinutes;
   const cls = delayClass(predicted);
-  const badgeText = predicted === null || predicted === undefined ? 'Sin retraso conocido' : `~${predicted} min`;
+  const badgeText = predicted === null || predicted === undefined ? 'No known delay' : `~${predicted} min`;
   const sourceLabel = SOURCE_LABELS[data.source] || '';
 
   let inboundHtml = '';
@@ -46,15 +46,15 @@ function render(data) {
     const ibDelay = ib.arrivalDelay ?? ib.departureDelay;
     inboundHtml = `
       <div class="inbound">
-        <h2>Avión entrante</h2>
+        <h2>Inbound aircraft</h2>
         <p class="inbound-flight">${ib.flightIata ?? '?'} · ${ib.from ?? '?'} → ${ib.to ?? '?'}</p>
         <div class="stats">
-          <span>Llegada prevista: ${formatTime(ib.scheduledArrival)}</span>
-          <span>Estimada: ${formatTime(ib.estimatedArrival)}</span>
-          <span>Real: ${formatTime(ib.actualArrival)}</span>
-          <span>Retraso: ${ibDelay ?? '—'} min</span>
+          <span>Scheduled arrival: ${formatTime(ib.scheduledArrival)}</span>
+          <span>Estimated: ${formatTime(ib.estimatedArrival)}</span>
+          <span>Actual: ${formatTime(ib.actualArrival)}</span>
+          <span>Delay: ${ibDelay ?? '—'} min</span>
         </div>
-        <p class="explain">Este avión hace la ruta ${ib.from ?? '?'} → ${data.departureAirport ?? '?'} y luego, ya en tierra, opera tu vuelo ${data.flightNumber}.</p>
+        <p class="explain">This aircraft flies ${ib.from ?? '?'} → ${data.departureAirport ?? '?'}, then turns around on the ground to operate your flight ${data.flightNumber}.</p>
       </div>
     `;
   }
@@ -67,8 +67,8 @@ function render(data) {
     </div>
     <div class="stats">
       <span>${data.departureAirport ?? '?'} → ${data.arrivalAirport ?? '?'}</span>
-      <span>Salida prevista: ${formatTime(data.scheduledDeparture)}</span>
-      <span>Estado: ${data.status ?? '—'}</span>
+      <span>Scheduled departure: ${formatTime(data.scheduledDeparture)}</span>
+      <span>Status: ${data.status ?? '—'}</span>
     </div>
     ${inboundHtml}
     ${message}
@@ -82,18 +82,18 @@ form.addEventListener('submit', async (event) => {
 
   const button = form.querySelector('button');
   button.disabled = true;
-  button.textContent = 'Consultando...';
+  button.textContent = 'Checking...';
   result.classList.remove('hidden');
-  result.innerHTML = '<p class="info">Buscando el avión y su vuelo anterior...</p>';
+  result.innerHTML = '<p class="info">Looking up the aircraft and its previous flight...</p>';
 
   try {
     const response = await fetch(`/api/predict?flight=${encodeURIComponent(flightNumber)}`);
     const data = await response.json();
     render(data);
   } catch (err) {
-    render({ error: 'No se pudo conectar con el servidor.' });
+    render({ error: 'Could not connect to the server.' });
   } finally {
     button.disabled = false;
-    button.textContent = 'Consultar';
+    button.textContent = 'Check';
   }
 });
